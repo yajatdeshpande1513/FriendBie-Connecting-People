@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>My Chat App-Yajat</title>
+    <script defer src="/socket.io/socket.io.js"></script>
+    <script defer src="/client.js"></script>
+    <style>
+      /* --- 1. CSS Variables & Global Styles --- */
+      :root {
+        --primary-glow: #00c6ff;
+        --secondary-glow: #0072ff;
+        --background-dark: #121212;
+        --surface-dark: #1e1e1e;
+        --text-primary: #ffffff;
+        --text-secondary: #b3b3b3;
+        --message-sent-bg: linear-gradient(45deg, var(--primary-glow), var(--secondary-glow));
+        --message-received-bg: #333333;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box; /* Ensures padding doesn't affect final dimensions */
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--background-dark);
+        color: var(--text-primary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+      }
+      
+      /* --- 2. Logo & Navigation --- */
+      nav {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      #logo {
+        height: 150px; /* Reduced size for a sleeker look */
+        filter: drop-shadow(0 0 15px rgba(0, 198, 255, 0.4)); /* Adds a cool glow effect */
+      }
+
+      hr {
+        display: none; /* Removed the old horizontal rule */
+      }
+      
+      /* --- 3. Main Chat Container --- */
+      .container {
+        width: 100%;
+        max-width: 800px; /* Set a max-width for larger screens */
+        height: 70vh; /* Responsive height based on viewport */
+        display: flex; /* Using Flexbox for modern layout */
+        flex-direction: column;
+        background-color: var(--surface-dark);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        overflow: hidden; /* Keeps child elements within the rounded corners */
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .myheading {
+        background: var(--message-sent-bg);
+        height: 60px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-weight: 600;
+        font-size: 22px;
+        letter-spacing: 1px;
+        flex-shrink: 0; /* Prevents the header from shrinking */
+      }
+      
+      /* --- 4. Message Display Area --- */
+      #messagebox {
+        flex-grow: 1; /* Allows this area to fill available space */
+        overflow-y: auto; /* Enables scrolling for messages */
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px; /* Adds space between messages */
+      }
+      
+      /* Custom scrollbar for a modern look */
+      #messagebox::-webkit-scrollbar {
+        width: 8px;
+      }
+      #messagebox::-webkit-scrollbar-track {
+        background: var(--surface-dark);
+      }
+      #messagebox::-webkit-scrollbar-thumb {
+        background-color: var(--primary-glow);
+        border-radius: 20px;
+      }
+
+      /* General message styling */
+      .message {
+        padding: 10px 15px;
+        border-radius: 18px;
+        max-width: 70%;
+        font-size: 16px;
+        line-height: 1.4;
+        animation: messageFadeIn 0.3s ease-in-out; /* Animation for new messages */
+        border: none; /* Removed old border */
+      }
+      
+      /* --- 5. Message Types & Alignment (Modernized) --- */
+      .right { /* Your sent messages */
+        align-self: flex-end; /* Modern Flexbox alignment */
+        background: var(--message-sent-bg);
+        color: var(--text-primary);
+        border-bottom-right-radius: 4px; /* "Tail" for the message bubble */
+      }
+
+      .left { /* Received messages */
+        align-self: flex-start; /* Modern Flexbox alignment */
+        background-color: var(--message-received-bg);
+        color: var(--text-secondary);
+        border-bottom-left-radius: 4px; /* "Tail" for the message bubble */
+      }
+
+      .center { /* Join/Leave notifications */
+        align-self: center;
+        background-color: transparent;
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+      }
+      
+      /* --- 6. Message Input Form --- */
+      .messagesendbox {
+        padding: 15px;
+        background-color: rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
+      }
+
+      .messagesendbox, form {
+        display: flex;
+        gap: 10px; /* Space between input and button */
+      }
+
+      #send_msg {
+        width: 100%;
+        padding: 12px 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        background-color: var(--surface-dark);
+        color: var(--text-primary);
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.3s ease; /* Smooth transition on focus */
+      }
+
+      #send_msg:focus {
+        border-color: var(--primary-glow); /* Highlight when typing */
+      }
+
+      #sendbtn {
+        width: 100px;
+        font-weight: 600;
+        color: white;
+        background: var(--message-sent-bg);
+        font-size: 16px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.2s ease, filter 0.2s ease; /* Smooth transition on hover */
+      }
+      
+      #sendbtn:hover {
+        filter: brightness(1.2); /* Makes the button brighter on hover */
+        transform: scale(1.05); /* Slightly enlarges the button */
+      }
+
+      /* --- 7. Animation & Responsiveness --- */
+      @keyframes messageFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 730px) {
+        body {
+          padding: 0;
+        }
+        .container {
+          height: 100vh; /* Full screen on mobile */
+          border-radius: 0;
+          border: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <img src="images/friendbie1.png" alt="Chat App Logo" id="logo">
+    </nav>
+    <div class="container">
+      <div class="myheading">My Chat App</div>
+      <div id="messagebox">
+        <div class="message center">You joined the party</div>
+        <div class="message left">Alex: Hey, glad you could make it! This new design looks awesome.</div>
+        <div class="message right">Me: I know, right? It feels so much more modern and clean.</div>
+        <div class="message right">Me: The animated messages are a nice touch.</div>
+        <div class="message left">Alex: Totally. And the color scheme is really easy on the eyes.</div>
+        <div class="message center">Sarah joined the party</div>
+      </div>
+      <div class="messagesendbox">
+        <form action="#" id="sendcont">
+          <input type="text" name="send_msg" id="send_msg" placeholder="Type a message...">
+          <button id="sendbtn">Send</button>
+        </form>
+      </div>
+    </div>
+  </body>
+  <script>
+    // Your script remains unchanged
+    var element=document.getElementById("messagebox");
+    element.scrollTop=element.scrollHeight;
+  </script>
+</html>

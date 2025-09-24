@@ -1,0 +1,17 @@
+{
+  "name": "mychatapp",
+  "version": "1.0.0",
+  "description": "First Realtime Chat app",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Yajat Deshpande",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10",
+    "socket.io": "^4.8.1",
+    "soket.io": "^0.0.1-security"
+  }
+}
