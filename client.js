@@ -11,7 +11,15 @@ const append=(message,position)=>{
     messageElement.classList.add("message");
     messageElement.classList.add(position);
     messageContainer.appendChild(messageElement);
+    messageContainer.scrollTop=messageContainer.scrollHeight;
 }
+socket.on("connect",()=>{
+    let username="";
+    while (!username || username.trim() === ""){
+    username=prompt("Enter your username");
+}
+socket.emit("new user joined",username);
+});
 
 form.addEventListener("submit",(event)=>{
     event.preventDefault();
@@ -20,9 +28,6 @@ form.addEventListener("submit",(event)=>{
     socket.emit( "send",message)
     msgInput.value="";
 })
-const username=prompt("Enter your Username");
-socket.emit("new user joined",username)
-
 socket.on("User-joined",(username)=>{
     append(`${username} joined the party`,"center");
     audio2.play();
@@ -37,4 +42,7 @@ socket.on("roomfull",(msg)=>{
 socket.on("User left",(username)=>{
     append(`${username} left the party`,"center");
     audio2.play();
+})
+socket.on("active-users",(count)=>{
+    append(`Active users:${count}`,"center");
 })

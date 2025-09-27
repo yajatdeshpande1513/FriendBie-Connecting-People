@@ -15,8 +15,8 @@ app.get("/",function(req,res){
 const activeusers={};
 
 io.on("connection",(socket)=>{
-    if(Object.keys(activeusers).length>=10){
-        socket.emit("Room full","Try again Later!")
+    if(Object.keys(activeusers).length>=150){
+        socket.emit("roomfull","Try again Later!")
         socket.disconnect();
         return ;
     }
@@ -30,7 +30,8 @@ io.on("connection",(socket)=>{
         socket.on("disconnect",()=>{
             console.log("user left",username);
             delete activeusers[socket.id];
-            socket.broadcast.emit("User left",username)
+            socket.broadcast.emit("User left",username);
+            io.emit("active-users",Object.keys(activeusers).length);
         })
     })
     socket.on("send",(message)=>{
