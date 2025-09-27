@@ -8,9 +8,9 @@ var io=require("socket.io")(http);
 const path=require("path");
 const mainfile=path.join(__dirname,"../")
 // console.log(__dirname);
-app.use(express.static(mainfile));
+app.use(express.static(path.join(__dirname)));
 app.get("/",function(req,res){
-    res.sendFile(mainfile+"/index.html");
+    res.sendFile(path.join(__dirname, "index.html"));
 })
 const activeusers={};
 
