@@ -1,235 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>My Chat App-Yajat</title>
-    <script defer src="/socket.io/socket.io.js"></script>
-    <script defer src="/client.js"></script>
+    <!-- Viewport meta tag is essential for responsive design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp | Modern Interface</title>
+    
+    <!-- Load Tailwind CSS for modern, utility-first styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Socket.io client -->
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <!-- Load Tone.js for modern, synthesized audio feedback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    
+    <!-- Load the updated client-side JavaScript -->
+    <script src="/client.js"></script>
+
     <style>
-      /* --- 1. CSS Variables & Global Styles --- */
-      :root {
-        --primary-glow: #00c6ff;
-        --secondary-glow: #0072ff;
-        --background-dark: #121212;
-        --surface-dark: #1e1e1e;
-        --text-primary: #ffffff;
-        --text-secondary: #b3b3b3;
-        --message-sent-bg: linear-gradient(45deg, var(--primary-glow), var(--secondary-glow));
-        --message-received-bg: #333333;
-      }
+        /* All @apply directives have been removed. 
+          Styling is now applied via Tailwind classes in the HTML 
+          or dynamically in client.js.
+        */
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box; /* Ensures padding doesn't affect final dimensions */
-      }
-
-      body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: var(--background-dark);
-        color: var(--text-primary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 100vh;
-        padding: 20px;
-      }
-      
-      /* --- 2. Logo & Navigation --- */
-      nav {
-        width: 100%;
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      #logo {
-        height: 150px; /* Reduced size for a sleeker look */
-        filter: drop-shadow(0 0 15px rgba(0, 198, 255, 0.4)); /* Adds a cool glow effect */
-      }
-
-      hr {
-        display: none; /* Removed the old horizontal rule */
-      }
-      
-      /* --- 3. Main Chat Container --- */
-      .container {
-        width: 100%;
-        max-width: 800px; /* Set a max-width for larger screens */
-        height: 70vh; /* Responsive height based on viewport */
-        display: flex; /* Using Flexbox for modern layout */
-        flex-direction: column;
-        background-color: var(--surface-dark);
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        overflow: hidden; /* Keeps child elements within the rounded corners */
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      .myheading {
-        background: var(--message-sent-bg);
-        height: 60px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        font-weight: 600;
-        font-size: 22px;
-        letter-spacing: 1px;
-        flex-shrink: 0; /* Prevents the header from shrinking */
-      }
-      
-      /* --- 4. Message Display Area --- */
-      #messagebox {
-        flex-grow: 1; /* Allows this area to fill available space */
-        overflow-y: auto; /* Enables scrolling for messages */
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px; /* Adds space between messages */
-      }
-      
-      /* Custom scrollbar for a modern look */
-      #messagebox::-webkit-scrollbar {
-        width: 8px;
-      }
-      #messagebox::-webkit-scrollbar-track {
-        background: var(--surface-dark);
-      }
-      #messagebox::-webkit-scrollbar-thumb {
-        background-color: var(--primary-glow);
-        border-radius: 20px;
-      }
-
-      /* General message styling */
-      .message {
-        padding: 10px 15px;
-        border-radius: 18px;
-        max-width: 70%;
-        font-size: 16px;
-        line-height: 1.4;
-        animation: messageFadeIn 0.3s ease-in-out; /* Animation for new messages */
-        border: none; /* Removed old border */
-      }
-      
-      /* --- 5. Message Types & Alignment (Modernized) --- */
-      .right { /* Your sent messages */
-        align-self: flex-end; /* Modern Flexbox alignment */
-        background: var(--message-sent-bg);
-        color: var(--text-primary);
-        border-bottom-right-radius: 4px; /* "Tail" for the message bubble */
-      }
-
-      .left { /* Received messages */
-        align-self: flex-start; /* Modern Flexbox alignment */
-        background-color: var(--message-received-bg);
-        color: var(--text-secondary);
-        border-bottom-left-radius: 4px; /* "Tail" for the message bubble */
-      }
-
-      .center { /* Join/Leave notifications */
-        align-self: center;
-        background-color: transparent;
-        color: var(--text-secondary);
-        font-size: 12px;
-        font-weight: 500;
-        text-transform: uppercase;
-      }
-      
-      /* --- 6. Message Input Form --- */
-      .messagesendbox {
-        padding: 15px;
-        background-color: rgba(0, 0, 0, 0.2);
-        flex-shrink: 0;
-      }
-
-      .messagesendbox, form {
-        display: flex;
-        gap: 10px; /* Space between input and button */
-      }
-
-      #send_msg {
-        width: 100%;
-        padding: 12px 15px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        background-color: var(--surface-dark);
-        color: var(--text-primary);
-        font-size: 16px;
-        outline: none;
-        transition: border-color 0.3s ease; /* Smooth transition on focus */
-      }
-
-      #send_msg:focus {
-        border-color: var(--primary-glow); /* Highlight when typing */
-      }
-
-      #sendbtn {
-        width: 100px;
-        font-weight: 600;
-        color: white;
-        background: var(--message-sent-bg);
-        font-size: 16px;
-        border: none;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: transform 0.2s ease, filter 0.2s ease; /* Smooth transition on hover */
-      }
-      
-      #sendbtn:hover {
-        filter: brightness(1.2); /* Makes the button brighter on hover */
-        transform: scale(1.05); /* Slightly enlarges the button */
-      }
-
-      /* --- 7. Animation & Responsiveness --- */
-      @keyframes messageFadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(10px);
+        /* Custom animation for new messages */
+        .message-animated {
+            animation: messageFadeIn 0.3s ease-out;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+        
+        @keyframes messageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-      }
+        
+        /* Custom animation for the modal */
+        @keyframes modalPopIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
 
-      @media (max-width: 730px) {
-        body {
-          padding: 0;
+        /* Custom animation for the toast */
+        @keyframes toastSlideIn {
+            to {
+                transform: translateX(0);
+            }
         }
-        .container {
-          height: 100vh; /* Full screen on mobile */
-          border-radius: 0;
-          border: none;
+        
+        /* Custom scrollbar for a cleaner look (using hex codes instead of @apply) */
+        #messagebox::-webkit-scrollbar {
+            width: 8px;
         }
-      }
+        #messagebox::-webkit-scrollbar-track {
+            background-color: #1f2937; /* Tailwind's bg-gray-800 */
+        }
+        #messagebox::-webkit-scrollbar-thumb {
+            background-color: #3b82f6; /* Tailwind's bg-blue-500 */
+            border-radius: 9999px; /* Tailwind's rounded-full */
+        }
+        #messagebox::-webkit-scrollbar-thumb:hover {
+            background-color: #60a5fa; /* Tailwind's bg-blue-400 */
+        }
     </style>
-  </head>
-  <body>
-    <nav>
-      <img src="images/friendbie1.png" alt="Chat App Logo" id="logo">
-    </nav>
-    <div class="container">
-      <div class="myheading">My Chat App</div>
-      <div id="messagebox">
-        <div class="message center">You joined the party</div>
-        <div class="message left">Alex: Hey, glad you could make it! This new design looks awesome.</div>
-        <div class="message right">Me: I know, right? It feels so much more modern and clean.</div>
-        <div class="message right">Me: The animated messages are a nice touch.</div>
-        <div class="message left">Alex: Totally. And the color scheme is really easy on the eyes.</div>
-        <div class="message center">Sarah joined the party</div>
-      </div>
-      <div class="messagesendbox">
-        <form action="#" id="sendcont">
-          <input type="text" name="send_msg" id="send_msg" placeholder="Type a message...">
-          <button id="sendbtn">Send</button>
-        </form>
-      </div>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans h-dvh flex flex-col antialiased">
+
+    <!-- 
+      MODAL for Username Input 
+      This replaces the blocking `prompt()`
+    -->
+    <div id="username-modal" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-full max-w-md" style="animation: modalPopIn 0.3s ease-out;">
+            <h2 class="text-3xl font-bold text-center mb-6 text-white">Welcome to ChatApp</h2>
+            <p class="text-center text-gray-400 mb-6">Please enter a username to join the chat.</p>
+            <form id="username-form">
+                <div class="mb-4">
+                    <label for="username-input" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                    <input type="text" id="username-input" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="e.g., 'Recruiter'" required>
+                </div>
+                <!-- Error message placeholder -->
+                <p id="username-error" class="text-red-400 text-sm mb-4 hidden"></p>
+                <button type="submit" id="join-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-300 transform hover:scale-105">
+                    Join Chat
+                </button>
+            </form>
+        </div>
     </div>
-  </body>
-  <script>
-    // Your script remains unchanged
-    var element=document.getElementById("messagebox");
-    element.scrollTop=element.scrollHeight;
-  </script>
+
+    <!-- 
+      MAIN Chat Interface 
+      This is hidden by default and shown after username is set
+    -->
+    <div id="chat-ui" class="h-full flex-col hidden"> <!-- Changed from 'flex' to 'hidden' -->
+        <!-- Header / Navigation -->
+        <nav class="bg-gray-800 p-4 shadow-lg flex justify-between items-center flex-shrink-0 z-10 border-b border-gray-700">
+            <div class="flex items-center space-x-3">
+                <!-- Using a placeholder for your logo -->
+                <img src="https://placehold.co/150x50/1e1e1e/00c6ff?text=ChatApp&font=inter" alt="Chat App Logo" class="h-10 rounded" onerror="this.onerror=null; this.src='https://placehold.co/150x50?text=ChatApp';">
+            </div>
+            <div id="user-count" class="text-sm font-medium text-green-400 bg-green-900 bg-opacity-50 px-3 py-1.5 rounded-full">
+                Connecting...
+            </div>
+        </nav>
+
+        <!-- Message Display Box -->
+        <div id="messagebox" class="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-gray-900">
+            <!-- Messages will be dynamically appended here by client.js -->
+        </div>
+
+        <!-- Message Input Form -->
+        <div class="p-4 bg-gray-800 shadow-inner flex-shrink-0 border-t border-gray-700">
+            <form action="#" id="sendcont" class="flex space-x-3">
+                <input type="text" name="send_msg" id="send_msg" placeholder="Type a message..." autocomplete="off"
+                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
+                <button id="sendbtn" type="submit"
+                        class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-300 transform hover:scale-105">
+                    Send
+                </button>
+            </form>
+        </div>
+    </div>
+
+</body>
 </html>
+
