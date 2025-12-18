@@ -22,10 +22,15 @@ io.on("connection", (socket) => {
     });
 
     socket.on("send", (message) => {
-        socket.broadcast.emit("receive", {
-            message: message,
-            username: activeusers[socket.id],
-        });
+        const username = activeusers[socket.id];
+        if (username) {
+            socket.broadcast.emit("receive", {
+                message: message,
+                username: username,
+            });
+        } else {
+            socket.emit("request-rejoin");
+        }
     });
 
     socket.on("disconnect", () => {
