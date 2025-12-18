@@ -1,47 +1,50 @@
-let express = require("express");
-let app = express();
+const express = require("express");
+const app = express();
+const http = require("http").Server(app);
+const io = require("socket.io")(http);
+const path = require("path");
+
 const port = process.env.PORT || 8000;
 
-var http = require("http").Server(app);
-var io = require("socket.io")(http);
-
-const path = require("path");
-const mainfile = path.join(__dirname, "../");
-// console.log(__dirname);-
 app.use(express.static(path.join(__dirname)));
-app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "index.html"));
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
 });
+
 const activeusers = {};
 
 io.on("connection", (socket) => {
-  if (Object.keys(activeusers).length >= 150) {
-    socket.emit("roomfull", "Try again Later!");
-    socket.disconnect();
-    return;
-  }
-  socket.on("new user joined", (username) => {
-    console.log("New user ", username);
-    activeusers[socket.id] = username;
-    socket.broadcast.emit("User-joined", username);
+    // Limit capacity
+    if (Object.keys(activeusers).length >= 150) {
+        socket.emit("roomfull", "Chat is full!");
+        socket.disconnect();
+        return;
+    }
 
-    io.emit("active-users", Object.keys(activeusers).length);
+    socket.on("new user joined", (username) => {
+        activeusers[socket.id] = username;
+        socket.broadcast.emit("User-joined", username);
+        io.emit("active-users", Object.keys(activeusers).length);
+    });
+
+    socket.on("send", (message) => {
+        socket.broadcast.emit("receive", {
+            message: message,
+            username: activeusers[socket.id],
+        });
+    });
 
     socket.on("disconnect", () => {
-      console.log("user left", username);
-      delete activeusers[socket.id];
-      socket.broadcast.emit("User left", username);
-      io.emit("active-users", Object.keys(activeusers).length);
+        if (activeusers[socket.id]) {
+            const username = activeusers[socket.id];
+            delete activeusers[socket.id];
+            socket.broadcast.emit("User left", username);
+            io.emit("active-users", Object.keys(activeusers).length);
+        }
     });
-  });
-  socket.on("send", (message) => {
-    console.log(message);
-    socket.broadcast.emit("receive", {
-      message: message,
-      username: activeusers[socket.id],
-    });
-  });
-});+
-http.listen(port, function () {
-  console.log("Server running at port", port);
+});
+
+http.listen(port, () => {
+    console.log(`Server active on port ${port}`);
 });

@@ -2,133 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!-- Viewport meta tag is essential for responsive design -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatApp | Modern Interface</title>
-    
-    <!-- Load Tailwind CSS for modern, utility-first styling -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>ChatApp | Centered Interface</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Load Socket.io client -->
     <script src="/socket.io/socket.io.js"></script>
-    
-    <!-- Load Tone.js for modern, synthesized audio feedback -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    
-    <!-- Load the updated client-side JavaScript -->
     <script src="/client.js"></script>
 
     <style>
-        /* All @apply directives have been removed. 
-          Styling is now applied via Tailwind classes in the HTML 
-          or dynamically in client.js.
-        */
+        /* Prevents body from scrolling, only the message box should scroll */
+        body { touch-action: pan-y; overflow: hidden; }
+        
+        #messagebox::-webkit-scrollbar { width: 6px; }
+        #messagebox::-webkit-scrollbar-thumb { background-color: #3b82f6; border-radius: 10px; }
 
-        /* Custom animation for new messages */
-        .message-animated {
-            animation: messageFadeIn 0.3s ease-out;
+        /* Message Bubble Styling */
+        .message {
+            max-width: 85%;
+            padding: 10px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 8px;
         }
-        
-        @keyframes messageFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        /* Custom animation for the modal */
+        .right { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 4px; }
+        .left { align-self: flex-start; background: #374151; color: white; border-bottom-left-radius: 4px; }
+        .center { align-self: center; background: transparent; color: #9ca3af; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
         @keyframes modalPopIn {
-            from {
-                opacity: 0;
-                transform: scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        /* Custom animation for the toast */
-        @keyframes toastSlideIn {
-            to {
-                transform: translateX(0);
-            }
-        }
-        
-        /* Custom scrollbar for a cleaner look (using hex codes instead of @apply) */
-        #messagebox::-webkit-scrollbar {
-            width: 8px;
-        }
-        #messagebox::-webkit-scrollbar-track {
-            background-color: #1f2937; /* Tailwind's bg-gray-800 */
-        }
-        #messagebox::-webkit-scrollbar-thumb {
-            background-color: #3b82f6; /* Tailwind's bg-blue-500 */
-            border-radius: 9999px; /* Tailwind's rounded-full */
-        }
-        #messagebox::-webkit-scrollbar-thumb:hover {
-            background-color: #60a5fa; /* Tailwind's bg-blue-400 */
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans h-dvh flex flex-col antialiased">
+<body class="bg-gray-950 text-gray-100 font-sans h-dvh flex flex-col antialiased">
 
-    <!-- 
-      MODAL for Username Input 
-      This replaces the blocking `prompt()`
-    -->
-    <div id="username-modal" class="fixed inset-0 bg-gray-900 bg-opacity-90 flex items-center justify-center z-50 p-4">
+    <div id="username-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-6">
         <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-700 w-full max-w-md" style="animation: modalPopIn 0.3s ease-out;">
-            <h2 class="text-3xl font-bold text-center mb-6 text-white">Welcome to ChatApp</h2>
-            <p class="text-center text-gray-400 mb-6">Please enter a username to join the chat.</p>
+            <h2 class="text-2xl font-bold text-center mb-6">Join Chat</h2>
             <form id="username-form">
-                <div class="mb-4">
-                    <label for="username-input" class="block text-sm font-medium text-gray-300 mb-2">Username</label>
-                    <input type="text" id="username-input" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" placeholder="e.g., 'Recruiter'" required>
-                </div>
-                <!-- Error message placeholder -->
+                <input type="text" id="username-input" class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white mb-4 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Enter username..." required>
                 <p id="username-error" class="text-red-400 text-sm mb-4 hidden"></p>
-                <button type="submit" id="join-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-300 transform hover:scale-105">
-                    Join Chat
-                </button>
+                <button type="submit" class="w-full bg-blue-600 py-3 rounded-lg font-bold hover:bg-blue-700 transition">Join Now</button>
             </form>
         </div>
     </div>
 
-    <!-- 
-      MAIN Chat Interface 
-      This is hidden by default and shown after username is set
-    -->
-    <div id="chat-ui" class="h-full flex-col hidden"> <!-- Changed from 'flex' to 'hidden' -->
-        <!-- Header / Navigation -->
-        <nav class="bg-gray-800 p-4 shadow-lg flex justify-between items-center flex-shrink-0 z-10 border-b border-gray-700">
-            <div class="flex items-center space-x-3">
-                <!-- Using a placeholder for your logo -->
-                <img src="https://placehold.co/150x50/1e1e1e/00c6ff?text=ChatApp&font=inter" alt="Chat App Logo" class="h-10 rounded" onerror="this.onerror=null; this.src='https://placehold.co/150x50?text=ChatApp';">
-            </div>
-            <div id="user-count" class="text-sm font-medium text-green-400 bg-green-900 bg-opacity-50 px-3 py-1.5 rounded-full">
-                Connecting...
+    <div id="chat-ui" class="hidden flex-col h-full w-full max-w-4xl mx-auto px-4 py-2 sm:py-4">
+        
+        <nav class="bg-gray-800 p-4 shadow-lg flex justify-between items-center flex-shrink-0 rounded-t-2xl border-b border-gray-700">
+            <h1 class="font-bold text-blue-400 tracking-tight">GROUP_CHAT</h1>
+            <div id="user-count" class="text-xs font-mono text-green-400 bg-green-950 px-3 py-1 rounded-full border border-green-900/50">
+                0 Active
             </div>
         </nav>
 
-        <!-- Message Display Box -->
-        <div id="messagebox" class="flex-grow overflow-y-auto p-4 md:p-6 space-y-4 bg-gray-900">
-            <!-- Messages will be dynamically appended here by client.js -->
-        </div>
+        <div id="messagebox" class="flex-grow flex flex-col overflow-y-auto p-4 space-y-2 bg-gray-900/50 border-x border-gray-800">
+            </div>
 
-        <!-- Message Input Form -->
-        <div class="p-4 bg-gray-800 shadow-inner flex-shrink-0 border-t border-gray-700">
-            <form action="#" id="sendcont" class="flex space-x-3">
-                <input type="text" name="send_msg" id="send_msg" placeholder="Type a message..." autocomplete="off"
-                       class="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition">
-                <button id="sendbtn" type="submit"
-                        class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition duration-300 transform hover:scale-105">
-                    Send
+        <div class="p-4 bg-gray-800 rounded-b-2xl border-t border-gray-700">
+            <form id="sendcont" class="flex items-center space-x-2">
+                <input type="text" id="send_msg" placeholder="Write a message..." autocomplete="off"
+                       class="flex-grow px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                <button id="sendbtn" type="submit" class="bg-blue-600 p-3 rounded-xl hover:bg-blue-700 transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
                 </button>
             </form>
         </div>
@@ -136,4 +75,3 @@
 
 </body>
 </html>
-
