@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const socket = io();
 
+    // DOM Elements
     const usernameModal = document.getElementById("username-modal");
     const usernameForm = document.getElementById("username-form");
     const usernameInput = document.getElementById("username-input");
@@ -20,19 +21,24 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    const scrollToBottom = () => {
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+    };
+
     const append = (message, position) => {
         const messageElement = document.createElement("div");
         messageElement.innerText = message;
-        // Apply centering and positioning classes
-        messageElement.classList.add("message", position, "message-animated");
+        messageElement.classList.add("message", position);
         messageContainer.appendChild(messageElement);
-        
-        // Ensure the scroll stays at the bottom
-        messageContainer.scrollTo({
-            top: messageContainer.scrollHeight,
-            behavior: 'smooth'
-        });
+        scrollToBottom();
     };
+
+    // Keep history visible when keyboard opens
+    msgInput.addEventListener('focus', () => {
+        setTimeout(scrollToBottom, 300); // Wait for keyboard animation
+    });
+
+    window.addEventListener('resize', scrollToBottom);
 
     usernameForm.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -41,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
             initAudio(); 
             socket.emit("new user joined", username);
             usernameModal.classList.add("hidden");
-            chatUI.classList.replace("hidden", "flex");
+            chatUI.style.display = 'flex';
             msgInput.focus();
             append("You joined the chat", "center");
         }
@@ -58,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     socket.on("User-joined", (user) => {
-        append(`${user} joined`, "center");
+        append(`${user} joined the chat`, "center");
         if (joinLeaveSynth) joinLeaveSynth.triggerAttackRelease("C4", "8n");
     });
 

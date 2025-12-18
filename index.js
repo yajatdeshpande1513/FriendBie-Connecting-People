@@ -15,13 +15,6 @@ app.get("/", (req, res) => {
 const activeusers = {};
 
 io.on("connection", (socket) => {
-    // Limit capacity
-    if (Object.keys(activeusers).length >= 150) {
-        socket.emit("roomfull", "Chat is full!");
-        socket.disconnect();
-        return;
-    }
-
     socket.on("new user joined", (username) => {
         activeusers[socket.id] = username;
         socket.broadcast.emit("User-joined", username);
@@ -37,14 +30,14 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         if (activeusers[socket.id]) {
-            const username = activeusers[socket.id];
+            const user = activeusers[socket.id];
             delete activeusers[socket.id];
-            socket.broadcast.emit("User left", username);
+            socket.broadcast.emit("User left", user);
             io.emit("active-users", Object.keys(activeusers).length);
         }
     });
 });
 
 http.listen(port, () => {
-    console.log(`Server active on port ${port}`);
+    console.log(`Server listening on port ${port}`);
 });
